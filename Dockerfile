@@ -17,4 +17,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "app.app:app"]
+# Ejecuta la aplicación usando el servidor de desarrollo de Flask, escuchando en el puerto 5000
+CMD ["python", "app/app.py"]

@@ -2,4 +2,5 @@ Flask
 Werkzeug
 opencv-python
 deepface
+gunicorn
 
