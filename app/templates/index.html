@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reconocimiento Facial en Vivo</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        #container { position: relative; }
+        #video { border: 2px solid black; }
+        #canvas { position: absolute; top: 0; left: 0; }
+        #status { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Reconocimiento Facial en Vivo (Cliente-Servidor)</h1>
+    <div id="container">
+        <video id="video" width="640" height="480" autoplay muted></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    <p id="status">Iniciando cámara...</p>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+        let processing = false;
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    statusEl.textContent = "Cámara activa. Analizando...";
+                    // Iniciar el bucle de procesamiento
+                    setInterval(processFrame, 500); // Envía un frame cada 500ms (2 FPS)
+                };
+            } catch (err) {
+                console.error("Error al acceder a la cámara: ", err);
+                statusEl.textContent = "Error al acceder a la cámara. Asegúrate de dar permiso.";
+            }
+        }
+
+        async function processFrame() {
+            if (processing) return; // Evitar envíos simultáneos
+            processing = true;
+
+            // Dibujar el frame actual en un canvas temporal para obtener la imagen
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const tempContext = tempCanvas.getContext('2d');
+            tempContext.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            const imageDataURL = tempCanvas.toDataURL('image/jpeg');
+
+            try {
+                const response = await fetch('/process_frame', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageDataURL })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+
+                const results = await response.json();
+                drawResults(results);
+
+            } catch (error) {
+                console.error('Error al procesar el frame:', error);
+                statusEl.textContent = "Error de conexión con el servidor.";
+            } finally {
+                processing = false;
+            }
+        }
+
+        function drawResults(results) {
+            // Limpiar el canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar cuadros para todos los rostros detectados (azul)
+            if (results.all_faces) {
+                results.all_faces.forEach(face => {
+                    context.strokeStyle = 'blue';
+                    context.lineWidth = 2;
+                    context.strokeRect(face.x, face.y, face.w, face.h);
+                    context.fillStyle = 'blue';
+                    context.font = '16px Arial';
+                    context.fillText('Rostro', face.x, face.y > 10 ? face.y - 5 : 10);
+                });
+            }
+
+            // Dibujar cuadros para los rostros reconocidos (verde)
+            if (results.recognized_faces) {
+                results.recognized_faces.forEach(face => {
+                    const { x, y, w, h } = face.coords;
+                    context.strokeStyle = 'green';
+                    context.lineWidth = 3;
+                    context.strokeRect(x, y, w, h);
+                    context.fillStyle = 'green';
+                    context.font = '18px Arial';
+                    context.fillText(face.name, x, y > 10 ? y - 5 : 10);
+                });
+            }
+        }
+
+        // Iniciar todo
+        startCamera();
+    </script>
+</body>
+</html>
