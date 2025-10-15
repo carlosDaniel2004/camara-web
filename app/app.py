@@ -186,8 +186,8 @@ def geometry_page():
             output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
             
             cap = cv2.VideoCapture(input_path)
-            # Solución: Usar un códec compatible (H.264) y obtener los FPS del video original
-            fourcc = cv2.VideoWriter_fourcc(*'avc1') # o 'mp4v' si avc1 no está disponible
+            # Volvemos al códec H.264 ('avc1') que es el estándar para compatibilidad web en servidores
+            fourcc = cv2.VideoWriter_fourcc(*'avc1')
             fps = cap.get(cv2.CAP_PROP_FPS)
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))

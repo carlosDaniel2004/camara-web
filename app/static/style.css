@@ -1,0 +1,183 @@
+/* --- General Styles & Dark Theme --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+    margin: 0;
+    line-height: 1.6;
+}
+
+main {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+h1, h2 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* --- Navigation Bar --- */
+nav {
+    background-color: #1f1f1f;
+    padding: 15px 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 25px;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    color: #e0e0e0;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #4CAF50;
+}
+
+/* --- Main Content Sections --- */
+.section {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Video & Canvas --- */
+#container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+#video {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    background-color: #000;
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#status {
+    text-align: center;
+    margin-top: 15px;
+    font-style: italic;
+    color: #aaa;
+}
+
+/* --- Forms & Buttons --- */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input[type="text"], input[type="file"] {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* --- Flashed Messages --- */
+.flashes {
+    list-style-type: none;
+    padding: 0;
+    margin-bottom: 15px;
+}
+.flashes li {
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.flashes .success {
+    background-color: #2e7d32;
+    color: #fff;
+}
+.flashes .error {
+    background-color: #c62828;
+    color: #fff;
+}
+
+/* --- Links --- */
+a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* --- Footer --- */
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    color: #777;
+    width: 100%;
+}

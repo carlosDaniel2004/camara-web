@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Reconocimiento Facial y Geométrico{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="logo">VisionAI</a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">Reconocimiento Facial</a></li>
+                <li><a href="{{ url_for('realtime_geometry_page') }}">Figuras en Vivo</a></li>
+                <li><a href="{{ url_for('geometry_page') }}">Figuras en Video</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 - Proyecto de Visión por Computadora</p>
+    </footer>
+</body>
+</html>
