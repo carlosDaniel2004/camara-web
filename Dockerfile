@@ -11,7 +11,9 @@ RUN apt-get update && \
         libglib2.0-0 \
         ffmpeg \
         libx264-dev \
-        && rm -rf /var/lib/apt/lists/*COPY requirements.txt .
+        && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
