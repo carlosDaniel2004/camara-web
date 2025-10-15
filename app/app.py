@@ -184,14 +184,13 @@ def geometry_page():
                 input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(input_path)
 
-                # Solución: Forzar la extensión .mp4 en el archivo de salida
+                # Solución Definitiva: Usar el códec VP9 en un contenedor WebM para máxima compatibilidad.
                 base_filename = os.path.splitext(filename)[0]
-                output_filename = f"processed_{base_filename}.mp4"
+                output_filename = f"processed_{base_filename}.webm"
                 output_path = os.path.join(app.config['PROCESSED_FOLDER'], output_filename)
                 
                 cap = cv2.VideoCapture(input_path)
-                # Revertimos al códec H.264 ('avc1') para máxima compatibilidad web en el servidor
-                fourcc = cv2.VideoWriter_fourcc(*'avc1')
+                fourcc = cv2.VideoWriter_fourcc(*'VP90')
                 fps = cap.get(cv2.CAP_PROP_FPS)
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))

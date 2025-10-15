@@ -27,7 +27,7 @@
 <div class="section">
     <h2>Video Procesado</h2>
     <video width="100%" controls>
-        <source src="{{ url_for('static', filename='processed_videos/' + processed_video) }}" type="video/mp4">
+        <source src="{{ url_for('static', filename='processed_videos/' + processed_video) }}" type="video/webm">
         Tu navegador no soporta la etiqueta de video.
     </video>
     <a href="{{ url_for('static', filename='processed_videos/' + processed_video) }}" download>Descargar Video</a>
