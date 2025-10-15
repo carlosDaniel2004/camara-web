@@ -11,13 +11,15 @@ app.secret_key = "tu_clave_secreta_aqui"
 
 # --- Configuración ---
 MODELS_PATH = 'app/models'
-UPLOAD_FOLDER = 'app/static' # Carpeta para guardar videos procesados
+UPLOAD_FOLDER = 'app/static'
+PROCESSED_FOLDER = 'app/static/processed_videos'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 
 if not os.path.exists(MODELS_PATH):
     os.makedirs(MODELS_PATH)
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(PROCESSED_FOLDER):
+    os.makedirs(PROCESSED_FOLDER)
 
 # --- Funciones de Detección de Geometría ---
 
@@ -182,13 +184,14 @@ def geometry_page():
                 input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(input_path)
 
-                # Procesar el video
-                output_filename = 'processed_' + filename
-                output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
+                # Solución: Forzar la extensión .mp4 en el archivo de salida
+                base_filename = os.path.splitext(filename)[0]
+                output_filename = f"processed_{base_filename}.mp4"
+                output_path = os.path.join(app.config['PROCESSED_FOLDER'], output_filename)
                 
                 cap = cv2.VideoCapture(input_path)
-                # Solución Definitiva: Usar el códec 'mp4v', que es más compatible y autónomo en OpenCV
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                # Revertimos al códec H.264 ('avc1') para máxima compatibilidad web en el servidor
+                fourcc = cv2.VideoWriter_fourcc(*'avc1')
                 fps = cap.get(cv2.CAP_PROP_FPS)
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -231,7 +234,8 @@ def delete_video(filename):
             flash('Error: Intento de eliminación de archivo no válido.', 'error')
             return redirect(url_for('geometry_page'))
 
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        # Apuntar a la nueva carpeta de videos procesados
+        filepath = os.path.join(app.config['PROCESSED_FOLDER'], filename)
         
         if os.path.exists(filepath):
             os.remove(filepath)
