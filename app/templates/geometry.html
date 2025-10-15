@@ -30,7 +30,8 @@
         <source src="{{ url_for('static', filename=processed_video) }}" type="video/mp4">
         Tu navegador no soporta la etiqueta de video.
     </video>
-    <a href="{{ url_for('static', filename=processed_video) }}" download>Descargar Video Procesado</a>
+    <a href="{{ url_for('static', filename=processed_video) }}" download>Descargar Video</a>
+    <a href="{{ url_for('delete_video', filename=processed_video) }}" class="delete-link" onclick="return confirm('¿Estás seguro de que quieres eliminar este video?');">Eliminar Video</a>
 </div>
 {% endif %}
 {% endblock %}

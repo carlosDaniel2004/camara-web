@@ -173,6 +173,15 @@ a:hover {
     text-decoration: underline;
 }
 
+.delete-link {
+    color: #f44336; /* Rojo */
+    margin-left: 20px;
+    font-weight: bold;
+}
+.delete-link:hover {
+    color: #d32f2f;
+}
+
 /* --- Footer --- */
 footer {
     text-align: center;

@@ -210,6 +210,27 @@ def geometry_page():
 
     return render_template('geometry.html')
 
+@app.route('/delete/<string:filename>')
+def delete_video(filename):
+    """Elimina un video procesado de la carpeta static."""
+    try:
+        # Medida de seguridad: solo permitir borrar archivos que empiecen con 'processed_'
+        if not filename.startswith('processed_'):
+            flash('Error: Intento de eliminación de archivo no válido.', 'error')
+            return redirect(url_for('geometry_page'))
+
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            flash(f'Video "{filename}" eliminado correctamente.', 'success')
+        else:
+            flash(f'Error: El video "{filename}" no fue encontrado.', 'error')
+    except Exception as e:
+        flash(f'Ocurrió un error al eliminar el video: {e}', 'error')
+    
+    return redirect(url_for('geometry_page'))
+
 # --- Rutas de Detección de Geometría en Vivo ---
 
 @app.route('/realtime_geometry')
