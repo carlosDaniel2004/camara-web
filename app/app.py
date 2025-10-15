@@ -177,36 +177,48 @@ def geometry_page():
             return redirect(request.url)
 
         if file:
-            filename = secure_filename(file.filename)
-            input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(input_path)
+            try:
+                filename = secure_filename(file.filename)
+                input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(input_path)
 
-            # Procesar el video
-            output_filename = 'processed_' + filename
-            output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
-            
-            cap = cv2.VideoCapture(input_path)
-            # Volvemos al códec H.264 ('avc1') que es el estándar para compatibilidad web en servidores
-            fourcc = cv2.VideoWriter_fourcc(*'avc1')
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
-            while(cap.isOpened()):
-                ret, frame = cap.read()
-                if not ret:
-                    break
+                # Procesar el video
+                output_filename = 'processed_' + filename
+                output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
                 
-                processed_frame = detect_shapes(frame)
-                out.write(processed_frame)
+                cap = cv2.VideoCapture(input_path)
+                # Volvemos al códec H.264 ('avc1') que es el estándar para compatibilidad web en servidores
+                fourcc = cv2.VideoWriter_fourcc(*'avc1')
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
-            cap.release()
-            out.release()
-            os.remove(input_path) # Elimina el video original
+                if not out.isOpened():
+                    raise IOError("No se pudo abrir el VideoWriter. Verifica que el códec 'avc1' esté disponible en el entorno del servidor.")
 
-            flash('¡Video procesado exitosamente!', 'success')
-            return render_template('geometry.html', processed_video=output_filename)
+                while(cap.isOpened()):
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    
+                    processed_frame = detect_shapes(frame)
+                    out.write(processed_frame)
+
+                cap.release()
+                out.release()
+                os.remove(input_path) # Elimina el video original
+
+                flash('¡Video procesado exitosamente!', 'success')
+                return render_template('geometry.html', processed_video=output_filename)
+            except Exception as e:
+                # Log detallado del error en la consola del servidor
+                import traceback
+                print("--- OCURRIÓ UN ERROR AL PROCESAR EL VIDEO ---")
+                traceback.print_exc()
+                print("---------------------------------------------")
+                flash(f'Error interno al procesar el video: {e}', 'error')
+                return redirect(request.url)
 
     return render_template('geometry.html')
 
