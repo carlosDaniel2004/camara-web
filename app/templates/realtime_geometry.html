@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detección de Figuras en Vivo</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #container { position: relative; }
+        #video { border: 2px solid black; background-color: #333; }
+        #canvas { position: absolute; top: 0; left: 0; }
+        #status { margin-top: 10px; font-weight: bold; }
+        a { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Detección de Figuras y Colores en Vivo</h1>
+    <div id="container">
+        <video id="video" width="640" height="480" autoplay muted></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    <p id="status">Iniciando cámara...</p>
+
+    <a href="{{ url_for('index') }}">Volver al Reconocimiento Facial</a>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+        let processing = false;
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    statusEl.textContent = "Cámara activa. Analizando...";
+                    setInterval(processFrame, 300); // Analiza más frecuentemente
+                };
+            } catch (err) {
+                console.error("Error al acceder a la cámara: ", err);
+                statusEl.textContent = "Error al acceder a la cámara. Asegúrate de dar permiso.";
+            }
+        }
+
+        async function processFrame() {
+            if (processing) return;
+            processing = true;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const tempContext = tempCanvas.getContext('2d');
+            tempContext.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            const imageDataURL = tempCanvas.toDataURL('image/jpeg');
+
+            try {
+                const response = await fetch('/process_geometry_frame', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageDataURL })
+                });
+
+                if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                
+                const results = await response.json();
+                drawResults(results.shapes);
+
+            } catch (error) {
+                console.error('Error al procesar el frame:', error);
+            } finally {
+                processing = false;
+            }
+        }
+
+        function drawResults(shapes) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (shapes) {
+                shapes.forEach(shape => {
+                    context.strokeStyle = 'orange';
+                    context.lineWidth = 3;
+                    context.strokeRect(shape.x, shape.y, shape.w, shape.h);
+                    context.fillStyle = 'orange';
+                    context.font = '18px Arial';
+                    context.fillText(shape.label, shape.x, shape.y > 10 ? shape.y - 5 : 10);
+                });
+            }
+        }
+
+        startCamera();
+    </script>
+</body>
+</html>

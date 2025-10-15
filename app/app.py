@@ -40,9 +40,13 @@ def get_color_name(hsv):
 def detect_shapes(frame):
     """Detecta triángulos, cuadrados, rectángulos y círculos en un frame."""
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blurred, 60, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
+
+    # Usar Canny edge detection para encontrar los bordes de las figuras
+    edged = cv2.Canny(blurred, 50, 150)
+    
+    # Encontrar contornos en el mapa de bordes
+    contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for cnt in contours:
         if cv2.contourArea(cnt) < 500:
@@ -182,8 +186,12 @@ def geometry_page():
             output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
             
             cap = cv2.VideoCapture(input_path)
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(output_path, fourcc, 20.0, (int(cap.get(3)), int(cap.get(4))))
+            # Solución: Usar un códec compatible (H.264) y obtener los FPS del video original
+            fourcc = cv2.VideoWriter_fourcc(*'avc1') # o 'mp4v' si avc1 no está disponible
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
             while(cap.isOpened()):
                 ret, frame = cap.read()
@@ -201,6 +209,69 @@ def geometry_page():
             return render_template('geometry.html', processed_video=output_filename)
 
     return render_template('geometry.html')
+
+# --- Rutas de Detección de Geometría en Vivo ---
+
+@app.route('/realtime_geometry')
+def realtime_geometry_page():
+    """Muestra la página de detección de geometría en tiempo real."""
+    return render_template('realtime_geometry.html')
+
+@app.route('/process_geometry_frame', methods=['POST'])
+def process_geometry_frame():
+    """Recibe un fotograma, detecta figuras y devuelve los resultados."""
+    try:
+        data = request.json['image']
+        header, encoded = data.split(",", 1)
+        image_data = base64.b64decode(encoded)
+        nparr = np.frombuffer(image_data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            return jsonify({'error': 'Frame inválido'}), 400
+
+        # Reutilizamos la lógica de detección de formas
+        shapes_data = []
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        _, thresh = cv2.threshold(blurred, 60, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for cnt in contours:
+            if cv2.contourArea(cnt) < 500:
+                continue
+
+            approx = cv2.approxPolyDP(cnt, 0.04 * cv2.arcLength(cnt, True), True)
+            
+            mask = np.zeros(gray.shape, np.uint8)
+            cv2.drawContours(mask, [cnt], -1, 255, -1)
+            mean_val = cv2.mean(frame, mask=mask)
+            hsv_color = cv2.cvtColor(np.uint8([[mean_val[:3]]]), cv2.COLOR_BGR2HSV)[0][0]
+            color_name = get_color_name(hsv_color)
+
+            x, y, w, h = cv2.boundingRect(approx)
+            shape_name = ""
+            
+            if len(approx) == 3: shape_name = "Triangulo"
+            elif len(approx) == 4:
+                aspect_ratio = float(w) / h
+                shape_name = "Cuadrado" if 0.95 < aspect_ratio < 1.05 else "Rectangulo"
+            else:
+                (cx, cy), radius = cv2.minEnclosingCircle(cnt)
+                area = cv2.contourArea(cnt)
+                circle_area = np.pi * (radius ** 2)
+                if abs(1 - (area / circle_area)) < 0.2: shape_name = "Circulo"
+
+            if shape_name:
+                shapes_data.append({
+                    'label': f"{color_name} {shape_name}",
+                    'x': x, 'y': y, 'w': w, 'h': h
+                })
+        
+        return jsonify({'shapes': shapes_data})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
