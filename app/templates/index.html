@@ -2,22 +2,53 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reconocimiento Facial en Vivo</title>
+    <title>Reconocimiento Facial</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #main-container { display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; }
+        .section { border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
         #container { position: relative; }
-        #video { border: 2px solid black; }
+        #video { border: 2px solid black; background-color: #333; }
         #canvas { position: absolute; top: 0; left: 0; }
         #status { margin-top: 10px; font-weight: bold; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Reconocimiento Facial en Vivo (Cliente-Servidor)</h1>
-    <div id="container">
-        <video id="video" width="640" height="480" autoplay muted></video>
-        <canvas id="canvas" width="640" height="480"></canvas>
+    <h1>Reconocimiento Facial Dinámico</h1>
+    
+    <div id="main-container">
+        <div class="section">
+            <h2>Cámara en Vivo</h2>
+            <div id="container">
+                <video id="video" width="640" height="480" autoplay muted></video>
+                <canvas id="canvas" width="640" height="480"></canvas>
+            </div>
+            <p id="status">Iniciando cámara...</p>
+        </div>
+
+        <div class="section">
+            <h2>Añadir Nueva Persona</h2>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <ul class="flashes">
+                {% for message in messages %}
+                  <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <label for="name">Nombre:</label>
+                <input type="text" id="name" name="name" required>
+                <label for="photo">Foto (una cara, mirando al frente):</label>
+                <input type="file" id="photo" name="photo" accept="image/*" required>
+                <button type="submit">Subir Foto</button>
+            </form>
+        </div>
     </div>
-    <p id="status">Iniciando cámara...</p>
 
     <script>
         const video = document.getElementById('video');
@@ -32,7 +63,6 @@
                 video.srcObject = stream;
                 video.onloadedmetadata = () => {
                     statusEl.textContent = "Cámara activa. Analizando...";
-                    // Iniciar el bucle de procesamiento
                     setInterval(processFrame, 500); // Envía un frame cada 500ms (2 FPS)
                 };
             } catch (err) {
@@ -42,10 +72,9 @@
         }
 
         async function processFrame() {
-            if (processing) return; // Evitar envíos simultáneos
+            if (processing) return;
             processing = true;
 
-            // Dibujar el frame actual en un canvas temporal para obtener la imagen
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = video.videoWidth;
             tempCanvas.height = video.videoHeight;
@@ -60,26 +89,21 @@
                     body: JSON.stringify({ image: imageDataURL })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                
                 const results = await response.json();
                 drawResults(results);
 
             } catch (error) {
                 console.error('Error al procesar el frame:', error);
-                statusEl.textContent = "Error de conexión con el servidor.";
             } finally {
                 processing = false;
             }
         }
 
         function drawResults(results) {
-            // Limpiar el canvas
             context.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar cuadros para todos los rostros detectados (azul)
             if (results.all_faces) {
                 results.all_faces.forEach(face => {
                     context.strokeStyle = 'blue';
@@ -91,7 +115,6 @@
                 });
             }
 
-            // Dibujar cuadros para los rostros reconocidos (verde)
             if (results.recognized_faces) {
                 results.recognized_faces.forEach(face => {
                     const { x, y, w, h } = face.coords;
@@ -105,7 +128,6 @@
             }
         }
 
-        // Iniciar todo
         startCamera();
     </script>
 </body>
